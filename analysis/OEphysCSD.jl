@@ -1,0 +1,53 @@
+module OEphysCSD
+
+using OEphys, TensorOps, CSDView
+
+# basedir = "/home/scottie/data/oephys/recording3"
+# apparently bad channels
+const REC3_BAD = [14,26,40,42,44,54,56,58,60,70,88,90,94,96,98,100,102,104,106,108,110,112,114,116,118,120,122,124,126,128]
+
+function get_erp(basedir::AbstractString, bad_channels::AbstractVector{<:Integer}=Int[])
+
+    meta = OEphys.metadata(basedir)
+
+    filepath, nchan, nsample, fs, cont_idx = OEphys.continuous_info(basedir, meta)
+    ds = OEphys.OEData(filepath, nchan, nsample, fs)
+
+    # event times (in seconds) in OE time base
+    evt = OEphys.csd_events(basedir)
+
+    # sample = round(Int, evt * fs) .+ 1 # sample # at which event occured (index of first sample is usually > 1)
+    # index = sample .- (cont_idx[1] - 1) # convert sample # to index within data file array
+    # or equivalently, subtract 2 from cont_idx[1]...
+    evt_idx = round.(Int, evt * fs) .- (cont_idx[1] - 2)
+
+    ratio = 1 // 30  # resampling ratio
+    lowcutoff = 0.5  # highpass filter cutoff
+    highcutoff = 0.0 # lowpass filter cutoff (0 = omit) (resampling includes lowpass filtering)
+
+    pre = -0.05
+    post = 0.25
+
+    # could be Float64(), but this acts as a check that <new_fs> is an integer factor of <fs>
+    new_fs = Int(fs * ratio)
+
+    npre = floor(Int, abs(pre) * ds.fs)
+    npost = floor(Int, post * ds.fs)
+
+    if isempty(bad)
+        proc = preprocessor(ratio, new_fs, lowcutoff, highcutoff)
+        data = load_and_process(ds, evt_idx, npre, npost, proc)
+    else
+        proc = preprocessor(ratio, new_fs, lowcutoff, highcutoff, bad, 2)
+        data = load_and_process(ds, evt_idx, npre, npost, proc)
+    end
+
+    nbase = floor(Int, 0.05 * new_fs) - 1
+    return rm_baseline!(mean_3(data), nbase)
+end
+
+function view_csd(erp, pre, post, title)
+    return CSDView.view(erp, (8,3), spacing=OEphys.CONTACT_SPACING, xlim=[pre, post], ylim=[3175,0], title=title)
+end
+
+end
