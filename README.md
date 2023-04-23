@@ -3,3 +3,4 @@
 * Allow for custom Preprocessor pipelines?
 * Add utils for Neuropixel Phase3A
 * Separate acquisition / file format code from probe code?
+* Automatic detection of "bad" channels?
