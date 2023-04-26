@@ -34,7 +34,7 @@ function load_and_process(d::ProbeData{T}, idx::AbstractVector{<:Integer},
 
     out = DataChunk(L, (olen, length(korder), length(idx)), ChunkDim(3))
 
-    trial_groups = group(idx, out.sizes)
+    trial_groups = DataChunk(idx, ChunkDim(1), nchunks=nchunks(out))
 
     raw = memmap(d)
 
@@ -48,11 +48,11 @@ function load_and_process(d::ProbeData{T}, idx::AbstractVector{<:Integer},
             )
     end
 
-    #Threads.@threads
     Threads.@threads for k in 1:nchunks(out)
-        for (j, slice) in enumerate(eachslice(getchunk(out,k), dims=3))
-            # TODO we need padding....
-            start = trial_groups[k][j] - npre
+        chnk = getchunk(out, k)
+        onset = getchunk(trial_groups, k)
+        for (j, slice) in enumerate(eachslice(chnk, dims=3))
+            start = onset[j] - npre
             stop = start + len - 1
             preprocess!(slice, raw[korder,start:stop]', procs[k])
         end
@@ -61,14 +61,31 @@ function load_and_process(d::ProbeData{T}, idx::AbstractVector{<:Integer},
     return out
 end
 
-function group(x::AbstractVector{T}, grps::AbstractVector{<:Integer}) where {T}
-    out = Vector{Vector{T}}(undef, length(grps))
-    j = 1
-    for k in 1:length(out)
-        out[k] = x[j:grps[k]]
-        j = grps[k] + 1
-    end
-    return out
-end
+#=
+function thread_error_wme()
 
+    x = DataChunk(1:27, ChunkDim(1))
+
+    # # this causes the error, where the name <ychnk> is repeated here and in the threaded
+    # # loop (NOTE: putting local ychnk = ... with the loop also avoid the error)
+    ychnk = 1:27
+    y = DataChunk(ychnk, ChunkDim(1))
+
+    # # this does not
+    # y = DataChunk(1:27, ChunkDim(1))
+
+    @assert(nchunks(x) == nchunks(y))
+    @assert(x == y)
+
+    Threads.@threads for k in 1:nchunks(x)
+        xchnk = getchunk(x, k)
+        # local ychnk = getchunk(y, k) # <- use of local avoids error...
+        ychnk = getchunk(y, k)
+        for j in eachindex(xchnk)
+            @assert(xchnk[j] == ychnk[j], "$(xchnk[j]) != $(ychnk[j])")
+        end
+    end
+    return nothing
+end
+=#
 end
