@@ -54,7 +54,8 @@ function load_and_process(d::ProbeData{T}, idx::AbstractVector{<:Integer},
         for (j, slice) in enumerate(eachslice(chnk, dims=3))
             start = onset[j] - npre
             stop = start + len - 1
-            preprocess!(slice, raw[korder,start:stop]', procs[k])
+            # yep, views of mmap arrays work just fine...
+            preprocess!(slice, view(raw, korder, start:stop)', procs[k])
         end
     end
 

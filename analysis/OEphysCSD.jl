@@ -58,6 +58,9 @@ function get_erp(basedir::AbstractString, bad_channels::AbstractVector{<:Integer
     else
         proc = preprocessor(ratio, new_fs, lowcutoff, highcutoff, bad_channels, 2)
         data = load_and_process(ds, evt_idx, npre, npost, proc)
+        # n = @allocated((data = load_and_process(ds, evt_idx, npre, npost, proc)))
+        # total = (post - pre) * fs * size(data, 2) * size(data, 3) * sizeof(Int16)
+        # @info("Allocation $(n/2^20), $(total/2^20) $(n/total)")
     end
 
 
