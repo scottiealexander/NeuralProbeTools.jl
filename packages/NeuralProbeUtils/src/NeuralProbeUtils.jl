@@ -1,11 +1,13 @@
 module NeuralProbeUtils
 
-using DSP#, Polyester
-using DataChunks
+using DSP, Statistics#, Polyester
+using DataChunks, TensorOps
 
-export preprocessor, load_and_process, channel_order
+export preprocessor, load_and_process, channel_order, find_bad_channels,
+    interpolate_bad_channels!
 
 include("./preprocessing.jl")
+include("./bad_channels.jl")
 
 abstract type ProbeData{T} end
 

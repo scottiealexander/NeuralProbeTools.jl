@@ -131,4 +131,20 @@ function find_channel_by_name(ifo::AbstractVector, name::AbstractString)
     error("Failed to locate channel \"$(name)\"")
 end
 # ============================================================================ #
+function find_sequence(seq::Vector{<:Integer}, target::AbstractVector{<:Integer})
+    out = Vector{UnitRange{Int}}(undef, 0)
+    len = length(target)
+    k = 1
+    while k <= (length(seq) - len) + 1
+        idx = k:k+len-1
+        if seq[idx] == target
+            push!(out, idx)#onset[idx])
+            k += len
+        else
+            k += 1
+        end
+    end
+    return out
+end
+# ============================================================================ #
 end
