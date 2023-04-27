@@ -6,7 +6,7 @@ using CSD, InteractiveImage, PyPlot, TensorOps
 function view(erp::AbstractMatrix{<:Real}, smoothing::Tuple{Int,Int};
     method::CSD.CSDMethod=CSD.D2, spacing::Real=1.0,
     ylim::Vector{<:Real}=[size(erp,2),1], xlim::Vector{<:Real}=[1,size(erp,1)],
-    rev::Bool=true, erp_smoothing::Tuple{Int,Int}=(0,2), title::AbstractString="")
+    rev::Bool=true, erp_smoothing::Tuple{Int,Int}=(2,0), title::AbstractString="")
 
     csd = CSD.csd(erp', smoothing, spacing, method)
 
@@ -14,7 +14,7 @@ function view(erp::AbstractMatrix{<:Real}, smoothing::Tuple{Int,Int};
     h.set_size_inches((12,6))
 
     show_image(
-        (sum(erp_smoothing) > 0 ? smooth(erp, erp_smoothing) : erp)',
+        (sum(erp_smoothing) > 0 ? smooth(erp', erp_smoothing) : erp'),
         xlim, ylim, "ERP", title, rev, ax[1]
     )
     show_image(csd, xlim, ylim, "CSD", title, rev, ax[2])

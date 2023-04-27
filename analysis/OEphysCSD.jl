@@ -8,7 +8,34 @@ using NeuralProbeUtils
 # apparently bad channels
 const REC3_BAD = [14,26,40,42,44,54,56,58,60,70,88,90,94,96,98,100,102,104,106,108,110,112,114,116,118,120,122,124,126,128]
 # ============================================================================ #
-function get_erp(basedir::AbstractString, bad_channels::AbstractVector{<:Integer}=Int[])
+"""
+    `h, erp, bad_channels = OEphysCSD.run(basedir::String; <keyword arguments>)`
+
+# Inputs:
+    * `basedir` - the full path to an OpenEphys recording's base directory
+                where the \"continuous\" and \"events\" folders can be found
+# Options:
+    * `pre::Real` - [-0.05] relative pre-stimulus baseline duration in SECONDS
+    * `post::Real` - [0.25] post-stimulus period duration in SECONDS
+    * `bad_channels::Vector{Int}` - [<auto>] indices of channels to interpolate
+    * `resample::Rational{Int}` - [1//30] resampling ratio
+    * `lowcutoff::Real` - [0.5] frequency in HZ of highpass filter cutoff (set to 0 to omit)
+    * `highcutoff::Real` - [0.0] frequency in HZ of lowpass filter cutoff (set to 0 to omit)
+    * `csd_smoothing::Tuple{Int,Int}` - [(8,3)] std (space,time) of Gaussian smoothing kernel for CSD in PIXELS
+    * `erp_smoothing::Tuple{Int,Int}` - [(2,0)] std (space,time) of Gaussian smoothing kernel for ERP in PIXELS
+    * `title::String` - [\"\"] the name of the recording (e.g. \"recording 3\")
+
+# Outputs:
+    * `h` - the handle to the created figure
+    * `erp` - a `time x channels` ERP matrix
+    * `bad_channels` - a list of indices of \"bad channels\", when the input option
+                     `bad_channels` is not set, bad channels will be automatically
+                     identified and the result is output for future calls
+
+"""
+function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
+    resample::Rational{Int}=1//30, lowcutoff::Real=0.5, highcutoff::Real=0.0, bad_channels::AbstractVector{<:Integer}=Int[], csd_smoothing::Tuple{Int,Int}=(8,3),
+    args...)
 
     meta = OEphys.metadata(basedir)
 
@@ -34,22 +61,15 @@ function get_erp(basedir::AbstractString, bad_channels::AbstractVector{<:Integer
     @info("$(length(evt_idx)) CSD transitions located")
     # ------------------------------------------------------------------------ #
 
-    ratio = 1 // 30  # resampling ratio
-    lowcutoff = 0.5  # highpass filter cutoff
-    highcutoff = 0.0 # lowpass filter cutoff (0 = omit) (resampling includes lowpass filtering)
-
-    pre = -0.05
-    post = 0.25
-
     # could be Float64(), but this acts as a check that <new_fs> is an integer factor of <fs>
-    new_fs = Int(fs * ratio)
+    new_fs = Int(fs * resample)
 
     npre = floor(Int, abs(pre) * ds.fs)
     npost = floor(Int, post * ds.fs)
 
     if isempty(bad_channels)
         # preprocessing does not include interpolation
-        proc = preprocessor(ratio, new_fs, lowcutoff, highcutoff)
+        proc = preprocessor(resample, new_fs, lowcutoff, highcutoff)
         data = load_and_process(ds, evt_idx, npre, npost, proc)
 
         # indices of bad channels from mean erp
@@ -58,25 +78,29 @@ function get_erp(basedir::AbstractString, bad_channels::AbstractVector{<:Integer
         # inplace interpolation of bad channels
         interpolate_bad_channels!(data, bad_channels, 2)
     else
-        proc = preprocessor(ratio, new_fs, lowcutoff, highcutoff, bad_channels, 2)
+        proc = preprocessor(resample, new_fs, lowcutoff, highcutoff, bad_channels, 2)
         data = load_and_process(ds, evt_idx, npre, npost, proc)
         # n = @allocated((data = load_and_process(ds, evt_idx, npre, npost, proc)))
         # total = (post - pre) * fs * size(data, 2) * size(data, 3) * sizeof(Int16)
         # @info("Allocation $(n/2^20), $(total/2^20) $(n/total)")
     end
 
+    nbase = floor(Int, abs(pre) * new_fs) - 1
+    erp = rm_baseline!(mean_3(data), nbase)
 
-    nbase = floor(Int, 0.05 * new_fs) - 1
-    return rm_baseline!(mean_3(data), nbase), bad_channels
+    h, ax = CSDView.view(erp, csd_smoothing; spacing=OEphys.CONTACT_SPACING,
+        xlim=[pre, post], ylim=[3175,0], rev=false, args...)
+
+    return h, erp, bad_channels
 end
 # ============================================================================ #
-function view_csd(erp, pre, post, title)
+function view_csd(erp, pre, post; args...)
     # after OEphys.channel_order is applied to data as it's read in, channels are
     # ordered superficial -> deep (or far-from-probe-tip to near-probe-tip)
     # so no need to reverse (unlike w/ Neuropixel data)
     return CSDView.view(
-        erp, (8,3), spacing=OEphys.CONTACT_SPACING,
-        xlim=[pre, post], ylim=[3175,0], title=title, rev=false
+        erp, (8,3); spacing=OEphys.CONTACT_SPACING,
+        xlim=[pre, post], ylim=[3175,0], rev=false, args...
     )
 end
 # ============================================================================ #
