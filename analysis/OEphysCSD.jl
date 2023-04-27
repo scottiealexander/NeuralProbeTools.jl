@@ -30,6 +30,8 @@ function get_erp(basedir::AbstractString, bad_channels::AbstractVector{<:Integer
     # the first 5 1's represent transitions x->white|black, the 6th is white->gray
     kevt = vcat(map(x->x[2:6],seqs)...)
     evt_idx = onset[kevt] .- (cont_idx[1] - 1)
+
+    @info("$(length(evt_idx)) CSD transitions located")
     # ------------------------------------------------------------------------ #
 
     ratio = 1 // 30  # resampling ratio
