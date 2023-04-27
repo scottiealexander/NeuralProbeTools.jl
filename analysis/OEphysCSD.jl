@@ -47,7 +47,8 @@ OEphysCSD.run(\"/home/user/data/deep-array/recording4", bad_channels=bad, title=
 
 """
 function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
-    resample::Rational{Int}=1//30, lowcutoff::Real=0.5, highcutoff::Real=0.0, bad_channels::AbstractVector{<:Integer}=Int[], csd_smoothing::Tuple{Int,Int}=(8,3),
+    resample::Rational{Int}=1//30, lowcutoff::Real=0.5, highcutoff::Real=0.0,
+    bad_channels::AbstractVector{<:Integer}=Int[], csd_smoothing::Tuple{Int,Int}=(8,3),
     args...)
 
     meta = OEphys.metadata(basedir)
@@ -92,7 +93,7 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
         interpolate_bad_channels!(data, bad_channels, 2)
     else
         proc = preprocessor(resample, new_fs, lowcutoff, highcutoff, bad_channels, 2)
-        @time data = load_and_process(ds, evt_idx, npre, npost, proc)
+        data = load_and_process(ds, evt_idx, npre, npost, proc)
         # n = @allocated((data = load_and_process(ds, evt_idx, npre, npost, proc)))
         # total = (post - pre) * fs * size(data, 2) * size(data, 3) * sizeof(Int16)
         # @info("Allocation $(n/2^20), $(total/2^20) $(n/total)")
