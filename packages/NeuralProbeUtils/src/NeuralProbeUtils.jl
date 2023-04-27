@@ -1,6 +1,6 @@
 module NeuralProbeUtils
 
-using DSP, Statistics#, Polyester
+using DSP, Statistics, Mmap#, Polyester
 using DataChunks, TensorOps
 
 export preprocessor, load_and_process, channel_order, find_bad_channels,
@@ -12,10 +12,10 @@ include("./bad_channels.jl")
 abstract type ProbeData{T} end
 
 # basic data dimentions
-n_channel(p::ProbeData) = error("Not implemented")
+n_channel(p::ProbeData) = error("n_channel() not implemented")
 
 # read access
-memmap(p::ProbeData) = error("Not implemented")
+memmap(p::ProbeData) = error("memmap() not implemented")
 
 # channel order / reordering
 channel_order(p::ProbeData) = 1:n_channel(p)

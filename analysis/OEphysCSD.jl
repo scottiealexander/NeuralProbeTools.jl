@@ -9,28 +9,41 @@ using NeuralProbeUtils
 const REC3_BAD = [14,26,40,42,44,54,56,58,60,70,88,90,94,96,98,100,102,104,106,108,110,112,114,116,118,120,122,124,126,128]
 # ============================================================================ #
 """
-    `h, erp, bad_channels = OEphysCSD.run(basedir::String; <keyword arguments>)`
+`h, erp, bad_channels = OEphysCSD.run(basedir::String; <keyword arguments>)`
+
+Calculate and plot CSD for DeepArray data recorded with OpenEphys
 
 # Inputs:
-    * `basedir` - the full path to an OpenEphys recording's base directory
+* `basedir` - the full path to an OpenEphys recording's base directory
                 where the \"continuous\" and \"events\" folders can be found
 # Options:
-    * `pre::Real` - [-0.05] relative pre-stimulus baseline duration in SECONDS
-    * `post::Real` - [0.25] post-stimulus period duration in SECONDS
-    * `bad_channels::Vector{Int}` - [<auto>] indices of channels to interpolate
-    * `resample::Rational{Int}` - [1//30] resampling ratio
-    * `lowcutoff::Real` - [0.5] frequency in HZ of highpass filter cutoff (set to 0 to omit)
-    * `highcutoff::Real` - [0.0] frequency in HZ of lowpass filter cutoff (set to 0 to omit)
-    * `csd_smoothing::Tuple{Int,Int}` - [(8,3)] std (space,time) of Gaussian smoothing kernel for CSD in PIXELS
-    * `erp_smoothing::Tuple{Int,Int}` - [(2,0)] std (space,time) of Gaussian smoothing kernel for ERP in PIXELS
-    * `title::String` - [\"\"] the name of the recording (e.g. \"recording 3\")
+* `pre::Real`                 - [-0.05] relative pre-stimulus baseline duration in SECONDS
+* `post::Real`                - [0.25] post-stimulus period duration in SECONDS
+* `bad_channels::Vector{Int}` - [<auto>] indices of channels to interpolate
+* `resample::Rational{Int}`   - [1//30] resampling ratio
+* `lowcutoff::Real`           - [0.5] frequency in HZ of highpass filter cutoff(set to 0 to omit)
+* `highcutoff::Real`          - [0.0] frequency in HZ of lowpass filter cutoff (set to 0 to omit)
+* `csd_smoothing::Tuple{Int,Int}` - [(8,3)] std (space,time) of Gaussian smoothing kernel for CSD in PIXELS
+* `erp_smoothing::Tuple{Int,Int}` - [(2,0)] std (space,time) of Gaussian smoothing kernel for ERP in PIXELS
+* `title::String`             - [\"\"] the name of the recording (e.g. \"recording 3\")
 
 # Outputs:
-    * `h` - the handle to the created figure
-    * `erp` - a `time x channels` ERP matrix
-    * `bad_channels` - a list of indices of \"bad channels\", when the input option
+* `h` - the handle to the created figure
+* `erp` - a `time x channels` ERP matrix
+* `bad_channels` - a list of indices of \"bad channels\", when the input option
                      `bad_channels` is not set, bad channels will be automatically
                      identified and the result is output for future calls
+
+# Examples
+```
+h, erp, bad = OEphysCSD.run(\"/home/user/data/deep-array/recording3\";
+                pre=-0.02, post=0.3, resample=1//30, lowcutoff=1.0,
+                title="recording 3", erp_smoothing=(2,2)
+            )
+
+# reuse bad channels that were automatically identified from recording 3
+OEphysCSD.run(\"/home/user/data/deep-array/recording4", bad_channels=bad, title="recording 4")
+```
 
 """
 function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
@@ -79,7 +92,7 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
         interpolate_bad_channels!(data, bad_channels, 2)
     else
         proc = preprocessor(resample, new_fs, lowcutoff, highcutoff, bad_channels, 2)
-        data = load_and_process(ds, evt_idx, npre, npost, proc)
+        @time data = load_and_process(ds, evt_idx, npre, npost, proc)
         # n = @allocated((data = load_and_process(ds, evt_idx, npre, npost, proc)))
         # total = (post - pre) * fs * size(data, 2) * size(data, 3) * sizeof(Int16)
         # @info("Allocation $(n/2^20), $(total/2^20) $(n/total)")
