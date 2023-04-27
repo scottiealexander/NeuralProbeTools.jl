@@ -27,7 +27,7 @@ function get_erp(basedir::AbstractString, bad_channels::AbstractVector{<:Integer
     onset, dur, lab = OEphys.ttl_events(basedir)
     seqs = OEphys.find_sequence(lab, [2,1,1,1,1,1,1,2])
 
-    # the first 6 1's represent transitions x->white|black, the 7th is white->gray
+    # the first 5 1's represent transitions x->white|black, the 6th is white->gray
     kevt = vcat(map(x->x[2:6],seqs)...)
     evt_idx = onset[kevt] .- (cont_idx[1] - 1)
     # ------------------------------------------------------------------------ #
@@ -51,10 +51,10 @@ function get_erp(basedir::AbstractString, bad_channels::AbstractVector{<:Integer
         data = load_and_process(ds, evt_idx, npre, npost, proc)
 
         # indices of bad channels from mean erp
-        bad = find_bad_channels(mean_3(data), 0.5)
+        bad_channels = find_bad_channels(mean_3(data), 0.5)
 
         # inplace interpolation of bad channels
-        interpolate_bad_channels!(data, bad, 2)
+        interpolate_bad_channels!(data, bad_channels, 2)
     else
         proc = preprocessor(ratio, new_fs, lowcutoff, highcutoff, bad_channels, 2)
         data = load_and_process(ds, evt_idx, npre, npost, proc)
@@ -65,11 +65,17 @@ function get_erp(basedir::AbstractString, bad_channels::AbstractVector{<:Integer
 
 
     nbase = floor(Int, 0.05 * new_fs) - 1
-    return rm_baseline!(mean_3(data), nbase)
+    return rm_baseline!(mean_3(data), nbase), bad_channels
 end
 # ============================================================================ #
 function view_csd(erp, pre, post, title)
-    return CSDView.view(erp, (8,3), spacing=OEphys.CONTACT_SPACING, xlim=[pre, post], ylim=[3175,0], title=title)
+    # after OEphys.channel_order is applied to data as it's read in, channels are
+    # ordered superficial -> deep (or far-from-probe-tip to near-probe-tip)
+    # so no need to reverse (unlike w/ Neuropixel data)
+    return CSDView.view(
+        erp, (8,3), spacing=OEphys.CONTACT_SPACING,
+        xlim=[pre, post], ylim=[3175,0], title=title, rev=false
+    )
 end
 # ============================================================================ #
 end
