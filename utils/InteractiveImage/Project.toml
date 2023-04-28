@@ -1,9 +1,9 @@
-name = "NeuralProbeTools"
-uuid = "25eb229a-12cf-4206-b5a1-704f040e59f6"
+name = "InteractiveImage"
+uuid = "d9f3ae7d-fc5c-4421-9bed-ce83263805cd"
 authors = ["scottiealexander <scottiealexander11@gmail.com>"]
 version = "0.1.0"
 
 [deps]
-OEphysCSD = "d0615aef-8be6-4b4c-9dd5-9306bc4b720c"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
 TensorOps = "b2ec7b68-08de-463d-9719-02a2a94546f2"

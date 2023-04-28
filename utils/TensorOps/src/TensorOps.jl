@@ -1,6 +1,8 @@
 module TensorOps
 
-using Statistics, ImageFiltering
+using LinearAlgebra, Statistics, ImageFiltering
+
+include("./csd.jl")
 
 export mean_3, std_3, mean_n, apply_n, rm_baseline!, median_subtract!, smooth, smooth!
 # ============================================================================ #

@@ -1,14 +1,10 @@
-module CSDView
-
-using CSD, InteractiveImage, PyPlot, TensorOps
-
 # ============================================================================ #
-function view(erp::AbstractMatrix{<:Real}, smoothing::Tuple{Int,Int};
-    method::CSD.CSDMethod=CSD.D2, spacing::Real=1.0,
+function csd_view(erp::AbstractMatrix{<:Real}, smoothing::Tuple{Int,Int};
+    method::TensorOps.CSDMethod=TensorOps.D2, spacing::Real=1.0,
     ylim::Vector{<:Real}=[size(erp,2),1], xlim::Vector{<:Real}=[1,size(erp,1)],
     rev::Bool=true, erp_smoothing::Tuple{Int,Int}=(2,0), title::AbstractString="")
 
-    csd = CSD.csd(erp', smoothing, spacing, method)
+    csd = TensorOps.csd(erp', smoothing, spacing, method)
 
     h, ax = subplots(1,2)
     h.set_size_inches((12,6))
@@ -17,6 +13,7 @@ function view(erp::AbstractMatrix{<:Real}, smoothing::Tuple{Int,Int};
         (sum(erp_smoothing) > 0 ? smooth(erp', erp_smoothing) : erp'),
         xlim, ylim, "ERP", title, rev, ax[1]
     )
+
     show_image(csd, xlim, ylim, "CSD", title, rev, ax[2])
 
     return h, ax
@@ -24,7 +21,7 @@ end
 # ============================================================================ #
 function show_image(im, xlim, ylim, type, title, rev, ax=nothing)
 
-    him, ax = InteractiveImage.display(
+    him, ax = display(
         rev ? reverse(im, dims=1) : im,
         xlim, ylim, ax=ax
     )
@@ -38,4 +35,3 @@ function show_image(im, xlim, ylim, type, title, rev, ax=nothing)
     return him, ax
 end
 # ============================================================================ #
-end

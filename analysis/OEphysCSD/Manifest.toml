@@ -2,7 +2,7 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "1c4900f384e82deb22ff888204ed705a7549a4a4"
+project_hash = "f1f66ae406013c44ec35c2c261b109065c4e9f26"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -39,7 +39,7 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[deps.CSV]]
-path = "./utils/CSV"
+path = "../../utils/CSV"
 uuid = "b80cb336-d18a-4855-aad4-5acfc9b361a0"
 version = "0.1.0"
 
@@ -114,7 +114,7 @@ version = "0.7.8"
 
 [[deps.DataChunks]]
 deps = ["Mmap"]
-path = "./utils/DataChunks"
+path = "../../DataChunks"
 uuid = "4c3033bb-9e5d-435f-95f3-b6c2a0c849ee"
 version = "0.1.0"
 
@@ -203,7 +203,7 @@ version = "2023.1.0+0"
 
 [[deps.InteractiveImage]]
 deps = ["PyCall", "PyPlot", "TensorOps"]
-path = "./utils/InteractiveImage"
+path = "../../utils/InteractiveImage/"
 uuid = "d9f3ae7d-fc5c-4421-9bed-ce83263805cd"
 version = "0.1.0"
 
@@ -346,20 +346,14 @@ version = "1.2.0"
 
 [[deps.NeuralProbeUtils]]
 deps = ["DSP", "DataChunks", "Mmap", "Statistics", "TensorOps"]
-path = "./packages/NeuralProbeUtils"
+path = "../../packages/NeuralProbeUtils/"
 uuid = "636f096b-9352-49b4-acc9-2241b51fea0c"
 version = "0.1.0"
 
 [[deps.OEphys]]
 deps = ["CSV", "DSP", "JSON", "Mmap", "NeuralProbeUtils"]
-path = "./packages/OEphys"
+path = "../../packages/OEphys/"
 uuid = "1f518d20-4df8-4f63-b61c-fbc9d6dc988b"
-version = "0.1.0"
-
-[[deps.OEphysCSD]]
-deps = ["InteractiveImage", "NeuralProbeUtils", "OEphys", "Statistics", "TensorOps"]
-path = "./analysis/OEphysCSD/"
-uuid = "d0615aef-8be6-4b4c-9dd5-9306bc4b720c"
 version = "0.1.0"
 
 [[deps.Observables]]
@@ -539,7 +533,7 @@ version = "0.1.1"
 
 [[deps.TensorOps]]
 deps = ["ImageFiltering", "LinearAlgebra", "Statistics"]
-path = "./utils/TensorOps"
+path = "../../utils/TensorOps/"
 uuid = "b2ec7b68-08de-463d-9719-02a2a94546f2"
 version = "0.1.0"
 

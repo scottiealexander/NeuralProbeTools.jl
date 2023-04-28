@@ -1,0 +1,11 @@
+name = "OEphys"
+uuid = "a85ae004-6bb5-4561-a22c-9cbef67998e7"
+authors = ["scottiealexander <scottiealexander11@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+CSV = "b80cb336-d18a-4855-aad4-5acfc9b361a0"
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
+NeuralProbeUtils = "636f096b-9352-49b4-acc9-2241b51fea0c"

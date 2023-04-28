@@ -1,7 +1,3 @@
-module CSD
-
-using TensorOps, LinearAlgebra
-
 @enum CSDMethod D2 iCSD ERP
 # ============================================================================ #
 # NOTE: erp is assumed to be channels x time
@@ -59,4 +55,3 @@ function d2(n::Integer, h::Real)
     return out
 end
 # ============================================================================ #
-end

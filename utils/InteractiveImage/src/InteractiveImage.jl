@@ -1,6 +1,8 @@
 module InteractiveImage
 
-using PyPlot, PyCall, ImageFiltering
+using PyPlot, PyCall, TensorOps
+
+include("./csd_view.jl")
 
 # ============================================================================ #
 function test()
@@ -24,7 +26,7 @@ function display(IMG::AbstractMatrix{<:Real}, xl::AbstractVector{<:Real}, yl::Ab
     ymn, ymx = yl[1], yl[end]
 
     if any(>(0), smoothing)
-        IMG = imfilter(IMG, KernelFactors.IIRGaussian(smoothing))
+        IMG = smooth(IMG, KernelFactors.IIRGaussian(smoothing))
     end
 
     him = ax.imshow(IMG, extent=[xmn, xmx, ymn, ymx])

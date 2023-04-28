@@ -1,7 +1,7 @@
 module OEphysCSD
 
 using Statistics
-using OEphys, TensorOps, CSDView
+using OEphys, TensorOps, InteractiveImage
 using NeuralProbeUtils
 
 # basedir = "/home/scottie/data/oephys/recording3"
@@ -102,7 +102,7 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
     nbase = floor(Int, abs(pre) * new_fs) - 1
     erp = rm_baseline!(mean_3(data), nbase)
 
-    h, ax = CSDView.view(erp, csd_smoothing; spacing=OEphys.CONTACT_SPACING,
+    h, ax = InteractiveImage.csd_view(erp, csd_smoothing; spacing=OEphys.CONTACT_SPACING,
         xlim=[pre, post], ylim=[3175,0], rev=false, args...)
 
     return h, erp, bad_channels
@@ -112,7 +112,7 @@ function view_csd(erp, pre, post; args...)
     # after OEphys.channel_order is applied to data as it's read in, channels are
     # ordered superficial -> deep (or far-from-probe-tip to near-probe-tip)
     # so no need to reverse (unlike w/ Neuropixel data)
-    return CSDView.view(
+    return InteractiveImage.csd_view(
         erp, (8,3); spacing=OEphys.CONTACT_SPACING,
         xlim=[pre, post], ylim=[3175,0], rev=false, args...
     )

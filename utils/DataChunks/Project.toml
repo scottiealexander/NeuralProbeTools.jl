@@ -1,0 +1,7 @@
+name = "DataChunks"
+uuid = "4c3033bb-9e5d-435f-95f3-b6c2a0c849ee"
+authors = ["scottiealexander <scottiealexander11@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
