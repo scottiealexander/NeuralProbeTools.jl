@@ -1,10 +1,7 @@
 module OEphys
 
-using Mmap, DSP, JSON#, NPZ
-using NeuralProbeUtils
-using CSV
-
-import NeuralProbeUtils
+using Mmap, DSP, JSON
+using CSV, NeuralProbeUtils
 
 export init_data, preprocessor, load_and_process
 
@@ -12,31 +9,14 @@ export init_data, preprocessor, load_and_process
 CONTACT_SPACING = 0.000025
 
 # ============================================================================ #
-struct OEData <: NeuralProbeUtils.ProbeData{Int16}
-    filepath::String
-    nchannel::Int
-    nsample::Int
-    fs::Float64
-end
-# ---------------------------------------------------------------------------- #
-function init_data(basedir::AbstractString)
+function openephys_data(basedir::AbstractString, p::NeuralProbeUtils.AbstractProbe=DBCDeepArray())
     meta = metadata(basedir)
-    filepath, nchan, nsample, fs, cont_idx = continuous_info(basedir, meta)
+    filepath, nchan, nsample, fs, cont_idx = continuous_info(basedir, meta, 1)
 
     onset, dur, code = ttl_events(basedir, meta)
     onset .-= (cont_idx[1] - 1)
 
-    return OEData(filepath, nchan, nsample, fs), onset, dur, code
-end
-# ============================================================================ #
-NeuralProbeUtils.n_channel(d::OEData) = d.nchannel
-# ---------------------------------------------------------------------------- #
-NeuralProbeUtils.channel_order(d::OEData) = reshape(vcat((1:64)',(128:-1:65)'),128)
-# ---------------------------------------------------------------------------- #
-function NeuralProbeUtils.memmap(d::OEData)
-    return open(d.filepath, "r") do io
-        Mmap.mmap(io, Matrix{Int16}, (d.nchannel, d.nsample), grow=false)
-    end
+    return FlatBinaryFile{typeof(p),Int16}(p, filepath, nchan, nsample, fs), onset, dur, code
 end
 # ============================================================================ #
 metadata(basedir::AbstractString) = JSON.parsefile(joinpath(basedir, "structure.oebin"))
@@ -84,7 +64,7 @@ function csd_events(basedir::AbstractString)
     return sort!(vcat(ifo["i0"][good], ifo["i1"][good], ifo["i2"][good], ifo["i3"][good], ifo["i4"][good]))
 end
 # ---------------------------------------------------------------------------- #
-function continuous_info(basedir::AbstractString, meta::Dict{String,Any}=metadata(basedir))
+function continuous_info(basedir::AbstractString, meta::Dict{String,Any}=metadata(basedir), nidx::Integer=typemax(Int))
     info = meta["continuous"][1]
     datadir = joinpath(basedir, "continuous", info["folder_name"])
     filepath = joinpath(datadir, "continuous.dat")
@@ -92,12 +72,12 @@ function continuous_info(basedir::AbstractString, meta::Dict{String,Any}=metadat
     nsample = Int(stat(filepath).size / (nchan * sizeof(Int16)))
     fs = info["sample_rate"]::Float64
 
-    idx = read_npy_1D(Int64, joinpath(datadir, "sample_numbers.npy"))
+    idx = read_npy_1D(Int64, joinpath(datadir, "sample_numbers.npy"), nidx)
 
     return filepath, nchan, nsample, fs, idx
 end
 # ---------------------------------------------------------------------------- #
-function read_npy_1D(::Type{T}, ifile::AbstractString) where {T<:Number}
+function read_npy_1D(::Type{T}, ifile::AbstractString, nel::Integer=typemax(Int)) where {T<:Number}
     return open(ifile, "r") do io
         magic = read(io, 6)
         @assert(String(magic) == "\x93NUMPY", "input file is not a NumPy array")
@@ -114,7 +94,7 @@ function read_npy_1D(::Type{T}, ifile::AbstractString) where {T<:Number}
 
         @assert(length(siz) == 1, "NumPy array is not 1D!")
 
-        data = Vector{T}(undef, siz[1])
+        data = Vector{T}(undef, min(siz[1], nel))
 
         read!(io, data)
 

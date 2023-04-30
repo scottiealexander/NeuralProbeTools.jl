@@ -4,8 +4,6 @@ using StringEncodings, Mmap
 
 using NeuralProbeUtils
 
-import NeuralProbeUtils
-
 # export SingleFile, OneFilePerSignalType, OneFilePerChannel
 export preprocessor, load_and_process, channel_order
 
@@ -19,27 +17,10 @@ const CONTACT_SPACING = 0.000025
 include("./events.jl")
 
 # ============================================================================ #
-struct IntanData <: NeuralProbeUtils.ProbeData{RawType}
-    filepath::String
-    nchannel::Int
-    nsample::Int
-    fs::Float64
-end
-
-function IntanData(filepath::AbstractString)
+function intan_data(filepath::AbstractString, p::NeuralProbeUtils.AbstractProbe=DBCDeepArray())
     nc, ns = get_datasize(filepath)
     fs = read_sample_rate(filepath)
-    return IntanData(filepath, nc, ns, fs)
-end
-# ---------------------------------------------------------------------------- #
-NeuralProbeUtils.n_channel(d::IntanData) = d.nchannel
-# ---------------------------------------------------------------------------- #
-NeuralProbeUtils.channel_order(d::IntanData) = reshape(vcat((1:64)',(128:-1:65)'),128)
-# ---------------------------------------------------------------------------- #
-function NeuralProbeUtils.memmap(d::IntanData)
-    return open(d.filepath, "r") do io
-        Mmap.mmap(io, Matrix{RawType}, (d.nchannel, d.nsample), grow=false)
-    end
+    return FlatBinaryFile{typeof(p),Int16}(p, filepath, nc, ns, fs)
 end
 # ============================================================================ #
 function read_channel_positions(filepath::AbstractString)

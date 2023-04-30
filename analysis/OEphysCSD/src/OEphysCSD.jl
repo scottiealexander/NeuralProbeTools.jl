@@ -50,12 +50,6 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
     resample::Rational{Int}=1//30, lowcutoff::Real=0.5, highcutoff::Real=0.0,
     bad_channels::AbstractVector{<:Integer}=Int[], csd_smoothing::Tuple{Int,Int}=(8,3),
     args...)
-
-    meta = OEphys.metadata(basedir)
-
-    filepath, nchan, nsample, fs, cont_idx = OEphys.continuous_info(basedir, meta)
-    ds = OEphys.OEData(filepath, nchan, nsample, fs)
-
     # ------------------------------------------------------------------------ #
     # # event times (in seconds) in OE time base
     # evt = OEphys.csd_events(basedir)
@@ -65,26 +59,28 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
     # # or equivalently, subtract 2 from cont_idx[1]...
     # evt_idx = round.(Int, evt * fs) .- (cont_idx[1] - 2)
     # ------------------------------------------------------------------------ #
-    onset, dur, lab = OEphys.ttl_events(basedir)
+    probe = DBCDeepArray()
+    file, onset, dur, lab = OEphys.openephys_data(basedir, probe)
+
     seqs = OEphys.find_sequence(lab, [2,1,1,1,1,1,1,2])
 
     # the first 5 1's represent transitions x->white|black, the 6th is white->gray
     kevt = vcat(map(x->x[2:6],seqs)...)
-    evt_idx = onset[kevt] .- (cont_idx[1] - 1)
+    evt_idx = onset[kevt]
 
     @info("$(length(evt_idx)) CSD transitions located")
     # ------------------------------------------------------------------------ #
 
     # could be Float64(), but this acts as a check that <new_fs> is an integer factor of <fs>
-    new_fs = Int(fs * resample)
+    new_fs = Int(file.fs * resample)
 
-    npre = floor(Int, abs(pre) * ds.fs)
-    npost = floor(Int, post * ds.fs)
+    npre = floor(Int, abs(pre) * file.fs)
+    npost = floor(Int, post * file.fs)
 
     if isempty(bad_channels)
         # preprocessing does not include interpolation
         proc = preprocessor(resample, new_fs, lowcutoff, highcutoff)
-        data = load_and_process(ds, evt_idx, npre, npost, proc)
+        data = load_and_process(file, evt_idx, npre, npost, proc)
 
         # indices of bad channels from mean erp
         bad_channels = find_bad_channels(mean_3(data), 0.5)
@@ -93,8 +89,8 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
         interpolate_bad_channels!(data, bad_channels, 2)
     else
         proc = preprocessor(resample, new_fs, lowcutoff, highcutoff, bad_channels, 2)
-        data = load_and_process(ds, evt_idx, npre, npost, proc)
-        # n = @allocated((data = load_and_process(ds, evt_idx, npre, npost, proc)))
+        data = load_and_process(file, evt_idx, npre, npost, proc)
+        # n = @allocated((data = load_and_process(file, evt_idx, npre, npost, proc)))
         # total = (post - pre) * fs * size(data, 2) * size(data, 3) * sizeof(Int16)
         # @info("Allocation $(n/2^20), $(total/2^20) $(n/total)")
     end
@@ -102,8 +98,12 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
     nbase = floor(Int, abs(pre) * new_fs) - 1
     erp = rm_baseline!(mean_3(data), nbase)
 
-    h, ax = InteractiveImage.csd_view(erp, csd_smoothing; spacing=OEphys.CONTACT_SPACING,
-        xlim=[pre, post], ylim=[3175,0], rev=false, args...)
+    # max and min y-position of channels
+    yl = extrema(channel_positions(probe)[:,2])
+
+    h, ax = InteractiveImage.csd_view(erp, csd_smoothing;
+        spacing=vertical_pitch(probe), xlim=[pre, post], ylim=[yl[2],yl[1]],
+        rev=false, args...)
 
     return h, erp, bad_channels
 end

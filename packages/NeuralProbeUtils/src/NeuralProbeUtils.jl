@@ -3,25 +3,19 @@ module NeuralProbeUtils
 using DSP, Statistics, Mmap#, Polyester
 using DataChunks, TensorOps
 
-export preprocessor, load_and_process, channel_order, find_bad_channels,
+export FlatBinaryFile, Neuropixel3A, DBCDeepArray, channel_order, vertical_pitch,
+    reference_channels, channel_positions
+
+export preprocessor, load_and_process, find_bad_channels,
     interpolate_bad_channels!
 
+include("./probe_definitions.jl")
+include("./flatbinary_file.jl")
 include("./preprocessing.jl")
 include("./bad_channels.jl")
 
-abstract type ProbeData{T} end
-
-# basic data dimentions
-n_channel(p::ProbeData) = error("n_channel() not implemented")
-
-# read access
-memmap(p::ProbeData) = error("memmap() not implemented")
-
-# channel order / reordering
-channel_order(p::ProbeData) = 1:n_channel(p)
-
-function load_and_process(d::ProbeData{T}, idx::AbstractVector{<:Integer},
-    npre::Integer, npost::Integer, proc::Preprocessor=preprocessor()) where {T}
+function load_and_process(d::FlatBinaryFile{P,T}, idx::AbstractVector{<:Integer},
+    npre::Integer, npost::Integer, proc::Preprocessor=preprocessor()) where {P,T}
 
     # size of time dimention in read-in data
     len = npost + npre
