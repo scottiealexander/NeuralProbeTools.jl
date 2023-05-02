@@ -79,7 +79,7 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
 
     if isempty(bad_channels)
         # preprocessing does not include interpolation
-        proc = preprocessor(resample, new_fs, lowcutoff, highcutoff)
+        proc = Preprocessor(Resampler(resample), Filterer(new_fs, lowcutoff, highcutoff))
         data = load_and_process(file, evt_idx, npre, npost, proc)
 
         # indices of bad channels from mean erp
@@ -88,10 +88,14 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
         # inplace interpolation of bad channels
         interpolate_bad_channels!(data, bad_channels, 2)
     else
-        proc = preprocessor(resample, new_fs, lowcutoff, highcutoff, bad_channels, 2)
+        proc = Preprocessor(
+            Resampler(resample),
+            Filterer(new_fs, lowcutoff, highcutoff),
+            Interpolator(bad_channels, 2)
+        )
         data = load_and_process(file, evt_idx, npre, npost, proc)
         # n = @allocated((data = load_and_process(file, evt_idx, npre, npost, proc)))
-        # total = (post - pre) * fs * size(data, 2) * size(data, 3) * sizeof(Int16)
+        # total = ((post - pre) * file.fs) * size(data, 2) * size(data, 3) * sizeof(Int16)
         # @info("Allocation $(n/2^20), $(total/2^20) $(n/total)")
     end
 

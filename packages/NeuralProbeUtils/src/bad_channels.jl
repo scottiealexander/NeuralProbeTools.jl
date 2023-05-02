@@ -1,6 +1,6 @@
 # ============================================================================ #
 function interpolate_bad_channels!(data::DataChunk{L,T,3,3}, bad::AbstractVector{<:Integer}, n::Integer) where {L,T}
-    ri = RealInterpolator(bad, n)
+    ri = Interpolator(bad, n)
     Threads.@threads for k in 1:nchunks(data)
         for slice in eachslice(getchunk(data,k), dims=3)
             interpolate_channels!(slice, ri)

@@ -3,19 +3,25 @@ module NeuralProbeUtils
 using DSP, Statistics, Mmap#, Polyester
 using DataChunks, TensorOps
 
+import Base
+
+const RealMat = AbstractMatrix{<:Real}
+
 export FlatBinaryFile, Neuropixel3A, DBCDeepArray, channel_order, vertical_pitch,
     reference_channels, channel_positions
 
-export preprocessor, load_and_process, find_bad_channels,
-    interpolate_bad_channels!
+export AbstractProcessor, Preprocessor, Resampler, Filterer, Interpolator, DepthAverager
+
+export load_and_process, find_bad_channels, interpolate_bad_channels!
 
 include("./probe_definitions.jl")
 include("./flatbinary_file.jl")
+include("./processors.jl")
 include("./preprocessing.jl")
 include("./bad_channels.jl")
 
 function load_and_process(d::FlatBinaryFile{P,T}, idx::AbstractVector{<:Integer},
-    npre::Integer, npost::Integer, proc::Preprocessor=preprocessor()) where {P,T}
+    npre::Integer, npost::Integer, proc::AbstractProcessor) where {P,T}
 
     # size of time dimention in read-in data
     len = npost + npre
@@ -23,24 +29,17 @@ function load_and_process(d::FlatBinaryFile{P,T}, idx::AbstractVector{<:Integer}
     # channel permutation vector
     korder = channel_order(d)
 
-    olen = output_length(proc, len)
-    L = output_type(T, proc)
+    olen, nchan = output_size(proc, len, length(korder))
 
-    out = DataChunk(L, (olen, length(korder), length(idx)), ChunkDim(3))
+    out = DataChunk(output_type(T, proc), (olen, nchan, length(idx)), ChunkDim(3))
 
     trial_groups = DataChunk(idx, ChunkDim(1), nchunks=nchunks(out))
 
     raw = memmap(d)
 
-    # FIRFilter within the Resampler (within <proc>) is mutable, so each
-    # thread needs their own, others can be references to a single instance
-    procs = map(1:nchunks(out)) do _
-        Preprocessor(
-            resampler=deepcopy(proc.resampler),
-            filter=proc.filter,
-            interpolator=proc.interpolator
-            )
-    end
+    # make nchunks(out) copies of the processor so that mutable data is not
+    # shared between tasks
+    procs = map(x -> copy(proc), 1:nchunks(out))
 
     Threads.@threads for k in 1:nchunks(out)
         chnk = getchunk(out, k)
@@ -48,8 +47,9 @@ function load_and_process(d::FlatBinaryFile{P,T}, idx::AbstractVector{<:Integer}
         for (j, slice) in enumerate(eachslice(chnk, dims=3))
             start = onset[j] - npre
             stop = start + len - 1
+
             # yep, views of mmap arrays work just fine...
-            preprocess!(slice, view(raw, korder, start:stop)', procs[k])
+            process!(slice, view(raw, korder, start:stop)', procs[k])
         end
     end
 
