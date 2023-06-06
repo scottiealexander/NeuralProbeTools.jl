@@ -58,3 +58,26 @@ function read_channel_positions(ifile::AbstractString)
     end
 end
 # ============================================================================ #
+"""
+`dk = fileindex_to_depthindex(p::AbstractProbe, idx::AbstractVector{<:Integer})`
+
+Convert 1-based file indices (i.e. first channel in data file has index 1)
+to 1-based "depth indices" (i.e. superficial -> deep order)
+
+# Inputs:
+* `probe::AbstractProbe` - an instance of the type of probe that was used
+* `idx::AbstractVector{<:Integer}` - 1-based file indices for channels
+
+# Outputs:
+* `dk::Vector{<:Integer}` - Vector of 1-based depth indices in corresponding order
+
+"""
+function fileindex_to_depthindex(p::AbstractProbe, idx::AbstractVector{T}) where {T<:Integer}
+    out = zeros(T, length(idx))
+    order = channel_order(p)
+    for k in eachindex(idx)
+        @inbounds out[k] = findfirst(isequal(idx[k]), order)
+    end
+    return out
+end
+# ============================================================================ #s

@@ -25,7 +25,16 @@ neural_tools_dir = "..."
 # commands are needed (each time) after launching a new Julia session
 cd(neural_tools_dir)
 
+# add project code to julia's search path (needed every time)
 include("./setpath.jl")
+
+# ---------------------------------------------------------------------------- #
+# actually download and install dependencies (ONLY NEEDED THE FIRST TIME)
+import Pkg
+Pkg.instantiate()
+# ---------------------------------------------------------------------------- #
+
+# pull in main CSD code (needed every time)
 using OEphysCSD
 
 # now we can run the code as many times as we need / like
@@ -41,6 +50,26 @@ h, erp, bad = OEphysCSD.run(rec_dir)
 
 # to time code (prints runtime and allocation info) you can use:
 @time h, erp, bad = OEphysCSD.run(rec_dir)
+
+```
+
+## Notes
+
+### Bad channels / channel indices
+With in a processing pipeline, channel indices range from `1:n_channel`, where channel 1 is farthest from the probe tip, and channel `n_channel` is closest
+to the probe tip, as defined in `NeuralProbeUtils/src/probe_definitions.jl`.
+
+So to convert from manufacturer / data file indices (assuming 1-based indexing everywhere) to "depth indices" you would:
+
+```julia
+using NeuralProbeUtils
+probe = DBCDeepArray() # or whatever you're using
+
+# for a DBCDeepArray, in the data file the channels are stored such that
+# channel 1 is farthest from probe tip, 128 is second farthest, 65 is closest, etc.
+file_idx = [1, 128, 64, 65]
+
+depth_idx = fileindex_to_depthindex(probe, file_idx) # -> [1, 2, 127, 128]
 
 ```
 

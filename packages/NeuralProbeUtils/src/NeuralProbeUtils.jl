@@ -12,7 +12,7 @@ export FlatBinaryFile, Neuropixel3A, DBCDeepArray, channel_order, vertical_pitch
 
 export AbstractProcessor, Preprocessor, Resampler, Filterer, Interpolator, DepthAverager
 
-export load_and_process, find_bad_channels, interpolate_bad_channels!
+export load_and_process, find_bad_channels, interpolate_bad_channels!, fileindex_to_depthindex
 
 include("./probe_definitions.jl")
 include("./flatbinary_file.jl")
