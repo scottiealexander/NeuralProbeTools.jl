@@ -42,7 +42,7 @@ h, erp, bad = OEphysCSD.run(\"/home/user/data/deep-array/recording3\";
             )
 
 # reuse bad channels that were automatically identified from recording 3
-OEphysCSD.run(\"/home/user/data/deep-array/recording4", bad_channels=bad, title="recording 4")
+OEphysCSD.run(\"/home/user/data/deep-array/recording4\", bad_channels=bad, title="recording 4")
 ```
 
 """

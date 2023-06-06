@@ -2,7 +2,7 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "bc32546a68f997120be851d3a1bae1bee76399d6"
+project_hash = "3be423a7d7375c74f53f33b5d696592488198cb1"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -154,6 +154,12 @@ deps = ["Statistics"]
 git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
+
+[[deps.GLX]]
+deps = ["Mmap", "NeuralProbeUtils"]
+path = "../../packages/GLX"
+uuid = "3c517028-e783-4acd-ac1f-e23cee0a1ad4"
+version = "0.1.0"
 
 [[deps.Graphics]]
 deps = ["Colors", "LinearAlgebra", "NaNMath"]

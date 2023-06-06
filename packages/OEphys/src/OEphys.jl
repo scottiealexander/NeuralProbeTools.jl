@@ -5,9 +5,6 @@ using CSV, NeuralProbeUtils
 
 export init_data, preprocessor, load_and_process
 
-# vertical contact spacing is 25 um
-CONTACT_SPACING = 0.000025
-
 # ============================================================================ #
 function openephys_data(basedir::AbstractString, p::NeuralProbeUtils.AbstractProbe=DBCDeepArray())
     meta = metadata(basedir)
