@@ -1,9 +1,20 @@
-## To do
-* Padding for in-place filtering during preprocessing
-* ~~Allow for custom Preprocessor pipelines?~~
-* ~~Add utils for spike glx data sets~~
-* ~~Separate acquisition / file format code from probe code?~~
-* ~~Automatic detection of "bad" channels?~~
+# NeuralProbeTools
+
+A collection of Julia modules for accessing and analyzing high-density neural probe data, including a highly optimized and extensible processing pipeline framework.
+
+## Organization
+* `utils` - general purpose utilities (i.e. not specific to neural probe data) that included packages and analyses rely upon
+* `packages` - core functionality for loading and processing neural probe data
+    * `NeuralProbeUtils` - core routines applicable to all probe data (i.e. any probe + file format combination) including:
+        * Probe definitions
+        * Flat binary file interface
+        * Processor / Preprocessing interface and implementations
+    * `GLX` - Access datasets recorded by SpikeGLX
+    * `Intan` - Access Intan datasets
+    * `OEphys` - Access OpenEphys datasets
+* `analysis` - User facing modules for performing analyses (see function level help within modules for more documentation)
+    * `OEphysCSD` - calculate and display current source density (CSD) images for (e.g.) during-acquisition probe positioning
+
 
 ## Install notes
 
@@ -97,3 +108,10 @@ then exit julia and relaunch:
 ```bash
 julia-1.8.5 -t 4 -J../test_sysimage.so # or whatever path and extension
 ```
+
+## To do
+* Padding for in-place filtering during preprocessing
+* ~~Allow for custom Preprocessor pipelines?~~
+* ~~Add utils for spike glx data sets~~
+* ~~Separate acquisition / file format code from probe code?~~
+* ~~Automatic detection of "bad" channels?~~

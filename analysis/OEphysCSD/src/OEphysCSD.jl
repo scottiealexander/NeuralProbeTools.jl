@@ -4,7 +4,6 @@ using Statistics
 using OEphys, TensorOps, InteractiveImage
 using NeuralProbeUtils
 
-# basedir = "/home/scottie/data/oephys/recording3"
 # apparently bad channels
 const REC3_BAD = [14,26,40,42,44,54,56,58,60,70,88,90,94,96,98,100,102,104,106,108,110,112,114,116,118,120,122,124,126,128]
 # ============================================================================ #
@@ -50,15 +49,7 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
     resample::Rational{Int}=1//30, lowcutoff::Real=0.5, highcutoff::Real=0.0,
     bad_channels::AbstractVector{<:Integer}=Int[], csd_smoothing::Tuple{Int,Int}=(8,3),
     args...)
-    # ------------------------------------------------------------------------ #
-    # # event times (in seconds) in OE time base
-    # evt = OEphys.csd_events(basedir)
-    #
-    # # sample = round(Int, evt * fs) .+ 1 # sample # at which event occured (index of first sample is usually > 1)
-    # # index = sample .- (cont_idx[1] - 1) # convert sample # to index within data file array
-    # # or equivalently, subtract 2 from cont_idx[1]...
-    # evt_idx = round.(Int, evt * fs) .- (cont_idx[1] - 2)
-    # ------------------------------------------------------------------------ #
+
     probe = DBCDeepArray()
     file, onset, dur, lab = OEphys.openephys_data(basedir, probe)
 
@@ -94,9 +85,6 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
             Interpolator(bad_channels, 2)
         )
         data = load_and_process(file, evt_idx, npre, npost, proc)
-        # n = @allocated((data = load_and_process(file, evt_idx, npre, npost, proc)))
-        # total = ((post - pre) * file.fs) * size(data, 2) * size(data, 3) * sizeof(Int16)
-        # @info("Allocation $(n/2^20), $(total/2^20) $(n/total)")
     end
 
     nbase = floor(Int, abs(pre) * new_fs) - 1
