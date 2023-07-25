@@ -6,14 +6,15 @@ using CSV, NeuralProbeUtils
 export init_data, preprocessor, load_and_process
 
 # ============================================================================ #
-function openephys_data(basedir::AbstractString, p::NeuralProbeUtils.AbstractProbe=DBCDeepArray())
+function openephys_data(basedir::AbstractString, d_codes::Dict{Int, String}, p::NeuralProbeUtils.AbstractProbe=DBCDeepArray())
     meta = metadata(basedir)
     filepath, nchan, nsample, fs, cont_idx = continuous_info(basedir, meta, 1)
 
-    onset, dur, code = ttl_events(basedir, meta)
+    onset, dur, code, str = ttl_events_coded(basedir, d_codes, meta)
+    #onset, dur, code = ttl_events(basedir, meta)
     onset .-= (cont_idx[1] - 1)
 
-    return FlatBinaryFile{typeof(p),Int16}(p, filepath, nchan, nsample, fs), onset, dur, code
+    return FlatBinaryFile{typeof(p),Int16}(p, filepath, nchan, nsample, fs), onset, dur, code, str
 end
 # ============================================================================ #
 metadata(basedir::AbstractString) = JSON.parsefile(joinpath(basedir, "structure.oebin"))
@@ -49,6 +50,47 @@ function ttl_events(basedir::AbstractString, meta::Dict{String,Any}=metadata(bas
 
     # sample onset (indices), pulse duration (in milliseconds), event code
     return onset, dur, code
+end
+#----------------------------------------------------------------------------- #
+function ttl_events_coded(basedir::AbstractString, d::Dict{Int, String}, meta::Dict{String,Any}=metadata(basedir))
+
+    ttlinfo = find_channel_by_name(meta["events"], "Rhythm FPGA TTL Input")
+    ttldir = joinpath(basedir, "events", ttlinfo["folder_name"])
+
+    sample_rate = ttlinfo["sample_rate"]::Float64
+
+    states = read_npy_1D(Int16, joinpath(ttldir, "states.npy"))
+    samples = read_npy_1D(Int64, joinpath(ttldir, "sample_numbers.npy"))
+    # evt = read_npy_1D(Float64, joinpath(ttldir, "timestamps.npy"))
+
+
+    nonset = sum(>(0), states)
+    onset = Vector{Int}(undef, nonset)
+    dur = Vector{Int}(undef, nonset)
+    code = Vector{Int16}(undef, nonset)
+    str = ""
+
+    inc = 1
+    for k in eachindex(states)
+        if states[k] > 0
+            kn = findnext(isequal(-states[k]), states, k+1)
+            if kn != nothing
+                onset[inc] = samples[k]
+                dur[inc] = round(Int, ((samples[kn] - samples[k]) / sample_rate) * 1000)
+                code[inc] = states[k]
+                if haskey(d, dur[inc])
+                    str = str * d[dur[inc]]
+                else
+                    # TODO - how to warn about this? Should ensure that ALL events have a code, or else
+                    # ??? What. Should that be an error, or allowed? 
+                end
+                inc += 1
+            end
+        end
+    end
+
+    # sample onset (indices), pulse duration (in milliseconds), event code, code string
+    return onset, dur, code, str
 end
 # ---------------------------------------------------------------------------- #
 function csd_events(basedir::AbstractString)
@@ -121,6 +163,11 @@ function find_sequence(seq::Vector{<:Integer}, target::AbstractVector{<:Integer}
             k += 1
         end
     end
+    return out
+end
+# ============================================================================ #
+function find_sequence_re(str::String, re::Regex, len::Int)
+    out=[x.offset:x.offset+len for x in eachmatch(re, str)]
     return out
 end
 # ============================================================================ #

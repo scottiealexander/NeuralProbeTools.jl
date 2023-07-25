@@ -51,15 +51,21 @@ function run(basedir::AbstractString; pre::Real=-0.05, post::Real=0.25,
     args...)
 
     probe = DBCDeepArray()
-    file, onset, dur, lab = OEphys.openephys_data(basedir, probe)
+    d_codes = Dict{Int, String}(20=>"F", 3=>"T", 4=>"s", 6=>"S", 10=>"E")
+    file, onset, dur, lab, str = OEphys.openephys_data(basedir, d_codes, probe)
 
+#= original implementation
     seqs = OEphys.find_sequence(lab, [2,1,1,1,1,1,1,2])
-
     # the first 5 1's represent transitions x->white|black, the 6th is white->gray
     kevt = vcat(map(x->x[2:6],seqs)...)
     evt_idx = onset[kevt]
-
     @info("$(length(evt_idx)) CSD transitions located")
+ =#
+    seqs = OEphys.find_sequence_re(str, r"TssssssS", 7)
+    kevt = vcat(map(x->x[2:6], seqs)...)
+    evt_idx = onset[kevt]
+    @info("$(length(seqs)) good trials, $(length(evt_idx)) CSD transitions located")
+
     # ------------------------------------------------------------------------ #
 
     # could be Float64(), but this acts as a check that <new_fs> is an integer factor of <fs>
